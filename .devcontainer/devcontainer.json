@@ -1,0 +1,31 @@
+{
+    "name": "LeRobot",
+    "containerEnv": {
+        "http_proxy": "http://host.docker.internal:7897",
+        "https_proxy": "http://host.docker.internal:7897",
+        "all_proxy": "socks5://host.docker.internal:7897",
+        "no_proxy": "localhost,127.0.0.1"
+    },
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "shutdownAction": "stopContainer",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "mhutchie.git-graph",
+                "ms-python.black-formatter",
+                "wangguixuan.var-translate-en",
+                "uctakeoff.vscode-counter"
+            ]
+        }
+    },
+    "runArgs": [
+        "--privileged"
+    ],
+    "mounts": [
+        "source=/dev,target=/dev,type=bind"
+    ]
+}
