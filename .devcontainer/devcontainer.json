@@ -1,13 +1,15 @@
 {
     "name": "LeRobot",
-    "containerEnv": {
-        "http_proxy": "http://host.docker.internal:7897",
-        "https_proxy": "http://host.docker.internal:7897",
-        "all_proxy": "socks5://host.docker.internal:7897",
-        "no_proxy": "localhost,127.0.0.1"
-    },
     "build": {
         "dockerfile": "Dockerfile"
+    },
+    "containerEnv": {
+        // Docker Engine 下用宿主机真实 IP 或 172.17.0.1（docker0 网关）
+        // 运行 ip addr show docker0 查看，通常是 172.17.0.1
+        "http_proxy": "http://172.17.0.1:7897",
+        "https_proxy": "http://172.17.0.1:7897",
+        "all_proxy": "socks5://172.17.0.1:7897",
+        "no_proxy": "localhost,127.0.0.1"
     },
     "shutdownAction": "stopContainer",
     "customizations": {
@@ -23,9 +25,14 @@
         }
     },
     "runArgs": [
-        "--privileged"
+        "--privileged",
+        "--group-add=video",
+        "--group-add=dialout",
+        "--network=host"
     ],
     "mounts": [
-        "source=/dev,target=/dev,type=bind"
-    ]
+        "source=/dev,target=/dev,type=bind,consistency=cached"
+    ],
+    // 用 postCreateCommand 安装项目依赖
+    "postCreateCommand": "pip install -e '.[all]' 2>/dev/null || pip install -e . || true"
 }
