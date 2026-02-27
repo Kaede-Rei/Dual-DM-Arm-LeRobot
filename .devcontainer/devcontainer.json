@@ -4,11 +4,8 @@
         "dockerfile": "Dockerfile"
     },
     "containerEnv": {
-        // Docker Engine 下用宿主机真实 IP 或 172.17.0.1（docker0 网关）
-        // 运行 ip addr show docker0 查看，通常是 172.17.0.1
-        "http_proxy": "http://172.17.0.1:7897",
-        "https_proxy": "http://172.17.0.1:7897",
-        "all_proxy": "socks5://172.17.0.1:7897",
+        "http_proxy": "http://127.0.0.1:7897",
+        "https_proxy": "http://127.0.0.1:7897",
         "no_proxy": "localhost,127.0.0.1"
     },
     "shutdownAction": "stopContainer",
