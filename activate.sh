@@ -10,6 +10,28 @@
 # 找到脚本所在目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+OS_TYPE="$(uname -s)"
+if [ "$OS_TYPE" != "Linux" ]; then
+    echo " 错误: 此环境仅支持 Linux 系统"
+    echo " 当前系统: $OS_TYPE"
+    return 1 2>/dev/null || exit 1
+fi
+
+ARCH_TYPE="$(uname -m)"
+REQUIRED_ARCH="x86_64"
+if [ "$ARCH_TYPE" != "$REQUIRED_ARCH" ]; then
+    echo " 警告: 架构不匹配！"
+    echo " 需要: $REQUIRED_ARCH, 当前: $ARCH_TYPE"
+    echo " 按任意键继续，或 Ctrl+C 退出..."
+    read -n 1
+fi
+
+if grep -qi microsoft /proc/version 2>/dev/null; then
+    echo " 检测到 WSL 环境。建议在原生 Linux 中运行以确保驱动和性能正常"
+    # 如果你想强制禁止 WSL，可以取消下面这一行的注释
+    # return 1 2>/dev/null || exit 1
+fi
+
 # micromamba 主目录
 MAMBA_ROOT="${SCRIPT_DIR}/micromamba"
 
