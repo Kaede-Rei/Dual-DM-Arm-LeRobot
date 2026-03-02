@@ -2,7 +2,7 @@
 
 # DM-Arm-LeRobot: 双机械臂模仿学习系统
 
-一个基于 [LeRobot](https://github.com/huggingface/lerobot) 的完整双机械臂机器人框架，集成了从遥操作数据采集、数据处理、模型训练到策略推理的全流程。
+一个基于 [LeRobot](https://github.com/huggingface/lerobot) 的完整双机械臂机器人框架，集成了从遥操作数据采集、数据处理、模型训练到策略推理的全流程
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -16,7 +16,7 @@
 
 ### 硬件配置
 
-<img src="./README.assets/dual-arm.jpg" width="80%" alt="dual-arm">
+<img src="./README.assets/dual-arm.jpg" width="60%" alt="dual-arm">
 
 | 部分 | 组件 | 功能 |
 |------|------|------|
