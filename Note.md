@@ -21,18 +21,18 @@ sudo reboot		# 重启
 
 ### 1.2. 硬件连接
 
-- 移动硬盘：插入移动硬盘<img src="README.assets/image-20260117100307811.png" alt="image-20260117100307811" style="zoom: 15%;" />
+- 移动硬盘：插入移动硬盘<img src="Note.assets/image-20260117100307811.png" alt="image-20260117100307811" style="zoom: 15%;" />
 
 - 电源：小电源开 24V 供从臂；开关电源输出 5V 供主臂
-    <img src="README.assets/image-20260206131402796.png" alt="image-20260206131402796" style="zoom:15%;" /><img src="README.assets/image-20260206131430882.png" alt="image-20260206131430882" style="zoom:15%;" />
+    <img src="Note.assets/image-20260206131402796.png" alt="image-20260206131402796" style="zoom:15%;" /><img src="Note.assets/image-20260206131430882.png" alt="image-20260206131430882" style="zoom:15%;" />
 
 - 从臂：小电源接转接板连接到底座供电，CAN 口接 USB转CAN模块 再接电脑，一般是 `/dev/ttyACM*` 
 
-  <img src="README.assets/image-20251223214528974.png" alt="image-20251223214528974" style="zoom:20%;" />
+  <img src="Note.assets/image-20251223214528974.png" alt="image-20251223214528974" style="zoom:20%;" />
 
 - 主臂：转接板由开关电源供电，输出 5V 和信号，Type-C 口接电脑，一般是 `/dev/ttyUSB*`
 
-  <img src="README.assets/image-20260206131515263.png" alt="image-20260206131515263" style="zoom:15%;" />
+  <img src="Note.assets/image-20260206131515263.png" alt="image-20260206131515263" style="zoom:15%;" />
 
 - 相机：录包时必须接相机，相机 USB 直接连接，然后用下面的脚本识别
 
@@ -228,7 +228,7 @@ sudo ./bash/usb-port-create.sh
 ### 5.2. 超算平台训练
 
 1.   **网址：**[北京超级云计算中心](https://cloud.blsc.cn/)
-     -   界面：<img src="README.assets/image-20260201232643080.png" alt="image-20260201232643080" style="zoom: 33%;" />
+     -   界面：<img src="Note.assets/image-20260201232643080.png" alt="image-20260201232643080" style="zoom: 33%;" />
      -   主要功能：①快传：用于传文件；②SSH：终端（注意连接后就会开始计费，此外就是提交作业到完成期间会计费）
      
 2.   **快传：**进入 `/data/home/su0101/run/` ，文件都要放这里，`/data/home/su0101/` 及父目录存不了多少，超过就会另外计费
@@ -240,7 +240,7 @@ sudo ./bash/usb-port-create.sh
      -   `/data/home/su0101/run/lerobo_robot_multi_robots/run.sh` 是训练脚本
      -   `/data/home/su0101/run/lerobo_robot_multi_robots/datasets/` 是训练期间的缓存，不用管
      
-3.   **SSH**：连接 `su0101` 超算帐号，先进入指定目录再切环境![image-20260206103058998](README.assets/image-20260206103058998.png)
+3.   **SSH**：连接 `su0101` 超算帐号，先进入指定目录再切环境![image-20260206103058998](Note.assets/image-20260206103058998.png)
 
      -   常用命令：
          -   `sbatch --gpus=2 ./run.sh`：用当前目录下的 `run.sh` 脚本，启用两张 4090 GPU 进行模型训练
@@ -323,16 +323,16 @@ sudo ./bash/usb-port-create.sh
 
      -   参考示意图：
 
-         <img src="README.assets/image-20260206110306878.png" alt="image-20260206110306878" style="zoom:50%;" />
+         <img src="Note.assets/image-20260206110306878.png" alt="image-20260206110306878" style="zoom:50%;" />
 
-         <img src="README.assets/image-20260206110604498.png" alt="image-20260206110604498" style="zoom:50%;" />
+         <img src="Note.assets/image-20260206110604498.png" alt="image-20260206110604498" style="zoom:50%;" />
 
          查看作业是否存活，然后在当前目录打开日志（.out 后缀文件），如果看到进度日志就说明开始训练了：
-         ![](README.assets/image-20260206110751006.png)
+         ![](Note.assets/image-20260206110751006.png)
 
 5.   **环境配置**：如果是需要用新的虚拟环境训练其他模型，需要自行准备好 `pyprojet.toml` 配置文件，在群里告知工程师需要配置该环境并命名为...，环境创建好后工程师会在群里通知你
 
-     -   <img src="README.assets/image-20260206103648328.png" alt="image-20260206103648328" style="zoom:50%;" />
+     -   <img src="Note.assets/image-20260206103648328.png" alt="image-20260206103648328" style="zoom:50%;" />
 
      -   训练脚本也就是 `run.sh` ，默认是在激活环境后调用你的实际训练脚本：`python xxx.py` ，按实际情况修改，也可以直接在 `run.sh` 里进行配置，以双臂 `IL+RL` 为例：
 
