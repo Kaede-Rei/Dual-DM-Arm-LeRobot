@@ -382,8 +382,7 @@ print(f'Episodes: {len(dataset)}')
 ## 📖 参考文献
 
 - **LeRobot**: [官方文档](https://huggingface.co/docs/lerobot)
-- **ACT**: [Action Chunking Transformers](https://arxiv.org/abs/2304.13705)
-- **SmolVLA**: [Vision Language Action Models](https://huggingface.co/collections/predibase/smol-vla-66f3b8a5dbaa8e1b0b6bf6a2)
+- **SmolVLA**: [LeRobot SmolVLA](https://huggingface.co/lerobot/smolvla_base)
 - **原始项目**: [TRLC-DK1](https://github.com/robot-learning-co/trlc-dk1)
 
 ## 📝 许可证
