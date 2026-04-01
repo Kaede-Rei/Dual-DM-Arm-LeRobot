@@ -5,7 +5,7 @@ from lerobot_robot_multi_robots.motors.DM_Control_Python.DM_CAN import *
 import time
 
 follower_config = DMFollowerConfig(
-    port="/dev/ttyACM0",
+    port="/dev/ttyUSB1",
 )
 follower = DMFollower(follower_config)
 

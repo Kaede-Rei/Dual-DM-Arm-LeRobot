@@ -97,7 +97,7 @@ class DMFollower(Robot):
         if self.is_connected:
             raise DeviceAlreadyConnectedError(f"{self} already connected")
 
-        self.serial_device = serial.Serial(self.config.port, 921600, timeout=0.5)
+        self.serial_device = serial.Serial(self.config.port, 115200, timeout=0.5)
         time.sleep(0.5)
 
         self.control = MotorControl(self.serial_device)
@@ -289,7 +289,7 @@ class DMLeader(Teleoperator):
             raise DeviceAlreadyConnectedError(f"{self} already connected")
 
         self.bus.connect(handshake=False)
-        self.bus.set_baudrate(1000000)
+        self.bus.set_baudrate(115200)
 
         self.configure()
 
