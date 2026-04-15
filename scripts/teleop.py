@@ -16,6 +16,7 @@
 # --follower_port <port> Follower 臂串口路径（默认 /dev/ttyACM0）
 # --leader_port <port> Leader 臂串口路径（默认 /dev/ttyUSB0）
 # --freq <float> 无界面模式下控制循环频率（Hz，默认 200.0）
+# --joint_velocity_scaling <float> Follower 关节速度缩放（默认 0.2）
 # --display_data 若指定，则启动 lerobot-teleoperate GUI 模式（自动启用摄像头显示，不运行脚本主循环）
 
 # 固定摄像头配置（仅在 --display_data 模式下生效）
@@ -49,9 +50,15 @@ CAMERAS_JSON = json.dumps(CAMERAS_CONFIG)
 
 def parse_args():
     ap = argparse.ArgumentParser(description="DK1 teleoperation")
-    ap.add_argument("--follower_port", default="/dev/com-1.4-tty")
-    ap.add_argument("--leader_port", default="/dev/com-1.2-tty")
+    ap.add_argument("--follower_port", default="/dev/com-1.3-tty")
+    ap.add_argument("--leader_port", default="/dev/com-1.4-tty")
     ap.add_argument("--freq", type=float, default=200.0)
+    ap.add_argument(
+        "--joint_velocity_scaling",
+        type=float,
+        default=1.0,
+        help="Follower 关节速度缩放（默认 1.0）",
+    )
     ap.add_argument(
         "--display_data",
         action="store_true",
@@ -68,7 +75,7 @@ def main():
             "lerobot-teleoperate",
             "--robot.type=dm_follower",
             f"--robot.port={args.follower_port}",
-            "--robot.joint_velocity_scaling=1.0",
+            f"--robot.joint_velocity_scaling={args.joint_velocity_scaling}",
             "--teleop.type=dm_leader",
             f"--teleop.port={args.leader_port}",
             "--display_data=true",
@@ -99,7 +106,7 @@ def main():
     follower = DMFollower(
         DMFollowerConfig(
             port=args.follower_port,
-            joint_velocity_scaling=1.0,
+            joint_velocity_scaling=args.joint_velocity_scaling,
             disable_torque_on_disconnect=True,
         )
     )
