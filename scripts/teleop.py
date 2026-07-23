@@ -19,6 +19,20 @@
 # --joint_velocity_scaling <float> Follower 关节速度缩放（默认 0.2）
 # --display_data 若指定，则启动 lerobot-teleoperate GUI 模式（自动启用摄像头显示，不运行脚本主循环）
 
+# Leader 各关节方向与零位偏移配置
+# 注意 Leader 各关节方向和角度要一一对应，通过 test/follower_test.py 和 test/leader_test.py 可验证关节映射是否正确
+LEADER_CONFIG = {
+    "direction": [1, 1, 1, 1, 1, 1],  # Leader 各关节方向（1 正向，-1 反向）
+    "offset": [
+        0.0,
+        0.0,
+        1.64,
+        0.0,
+        0.0,
+        0.0,
+    ],  # Leader 各关节零位偏移（单位 rad，等同于 test）
+}
+
 # 固定摄像头配置（仅在 --display_data 模式下生效）
 # 根据实际硬件修改以下配置（例如摄像头索引、分辨率、FPS 等）
 CAMERAS_CONFIG = {
@@ -117,6 +131,11 @@ def main():
         print("Starting pure teleoperation (no GUI, no cameras)...")
         while True:
             action = leader.get_action()
+            action = [
+                action[i] * LEADER_CONFIG["direction"][i] + LEADER_CONFIG["offset"][i]
+                for i in range(6)
+            ]
+
             follower.send_action(action)
             time.sleep(period)
     except KeyboardInterrupt:

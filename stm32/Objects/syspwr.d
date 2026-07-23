@@ -1,7 +1,7 @@
 .\objects\syspwr.o: System\SysPWR.c
 .\objects\syspwr.o: .\Start\stm32f10x.h
 .\objects\syspwr.o: .\Start\core_cm3.h
-.\objects\syspwr.o: D:\Keil 5--C51\ARM\ARMCC\Bin\..\include\stdint.h
+.\objects\syspwr.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 .\objects\syspwr.o: .\Start\system_stm32f10x.h
 .\objects\syspwr.o: .\User\stm32f10x_conf.h
 .\objects\syspwr.o: .\Library\stm32f10x_adc.h

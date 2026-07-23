@@ -2,7 +2,7 @@
 .\objects\filter.o: System\filter.h
 .\objects\filter.o: .\Start\stm32f10x.h
 .\objects\filter.o: .\Start\core_cm3.h
-.\objects\filter.o: D:\Keil 5--C51\ARM\ARMCC\Bin\..\include\stdint.h
+.\objects\filter.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 .\objects\filter.o: .\Start\system_stm32f10x.h
 .\objects\filter.o: .\User\stm32f10x_conf.h
 .\objects\filter.o: .\Library\stm32f10x_adc.h

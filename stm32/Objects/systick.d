@@ -2,7 +2,7 @@
 .\objects\systick.o: System\systick.h
 .\objects\systick.o: .\Start\stm32f10x.h
 .\objects\systick.o: .\Start\core_cm3.h
-.\objects\systick.o: D:\Keil 5--C51\ARM\ARMCC\Bin\..\include\stdint.h
+.\objects\systick.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 .\objects\systick.o: .\Start\system_stm32f10x.h
 .\objects\systick.o: .\User\stm32f10x_conf.h
 .\objects\systick.o: .\Library\stm32f10x_adc.h

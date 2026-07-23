@@ -2,7 +2,7 @@
 .\objects\iic.o: Hardware\IIC.h
 .\objects\iic.o: .\Start\stm32f10x.h
 .\objects\iic.o: .\Start\core_cm3.h
-.\objects\iic.o: D:\Keil 5--C51\ARM\ARMCC\Bin\..\include\stdint.h
+.\objects\iic.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 .\objects\iic.o: .\Start\system_stm32f10x.h
 .\objects\iic.o: .\User\stm32f10x_conf.h
 .\objects\iic.o: .\Library\stm32f10x_adc.h

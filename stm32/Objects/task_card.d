@@ -2,7 +2,7 @@
 .\objects\task_card.o: System\task_card.h
 .\objects\task_card.o: .\Start\stm32f10x.h
 .\objects\task_card.o: .\Start\core_cm3.h
-.\objects\task_card.o: D:\Keil 5--C51\ARM\ARMCC\Bin\..\include\stdint.h
+.\objects\task_card.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 .\objects\task_card.o: .\Start\system_stm32f10x.h
 .\objects\task_card.o: .\User\stm32f10x_conf.h
 .\objects\task_card.o: .\Library\stm32f10x_adc.h
