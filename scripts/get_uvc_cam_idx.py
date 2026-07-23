@@ -48,8 +48,8 @@ def check_v4l2_ctl():
     """检查 v4l2-ctl 是否存在"""
     if shutil.which("v4l2-ctl") is None:
         print(
-            "\n[ERROR] 未检测到 v4l2-ctl 工具。\n"
-            "该脚本需要 v4l2-ctl 来查询摄像头分辨率和帧率。\n\n"
+            "\n[ERROR] 未检测到 v4l2-ctl 工具\n"
+            "该脚本需要 v4l2-ctl 来查询摄像头分辨率和帧率\n\n"
             "请安装：\n"
             "  sudo apt install v4l-utils\n"
         )
@@ -126,9 +126,15 @@ def preview_camera(index):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="USB 摄像头能力扫描工具（OpenCV + v4l2）")
-    parser.add_argument("--start", type=int, default=0, help="起始 OpenCV 摄像头索引（默认 0）")
-    parser.add_argument("--end", type=int, default=10, help="结束 OpenCV 摄像头索引（默认 10）")
+    parser = argparse.ArgumentParser(
+        description="USB 摄像头能力扫描工具（OpenCV + v4l2）"
+    )
+    parser.add_argument(
+        "--start", type=int, default=0, help="起始 OpenCV 摄像头索引（默认 0）"
+    )
+    parser.add_argument(
+        "--end", type=int, default=10, help="结束 OpenCV 摄像头索引（默认 10）"
+    )
     parser.add_argument("--preview", action="store_true", help="启用实时预览模式")
 
     args = parser.parse_args()

@@ -9,15 +9,23 @@ import argparse
 import time
 import sys
 import numpy as np
+from pathlib import Path
 from lerobot_robot_multi_robots.dm_arm import DMFollower
 from lerobot_robot_multi_robots.config_dm_arm import DMFollowerConfig
+
+DEFAULT_CONFIG_PATH = str(Path(__file__).resolve().parents[1] / "config" / "arm.yaml")
 
 def parse_args():
     parser = argparse.ArgumentParser(description="DK1 Follower 平滑复位脚本")
     parser.add_argument(
+        "--config",
+        default=DEFAULT_CONFIG_PATH,
+        help="机械臂配置文件（默认 config/arm.yaml）"
+    )
+    parser.add_argument(
         "--follower_port",
-        default="/dev/ttyACM0",
-        help="Follower 臂串口（默认 /dev/ttyACM0）"
+        default=None,
+        help="Follower 臂串口（默认读取配置文件）"
     )
     parser.add_argument(
         "--joint_velocity_scaling",
@@ -70,24 +78,29 @@ def parse_args():
 
 def main():
     args = parse_args()
+    follower_config = DMFollowerConfig(
+        config_path=args.config,
+        port=args.follower_port,
+        joint_velocity_scaling=args.joint_velocity_scaling,
+        disable_torque_on_disconnect=True,
+        cameras={},
+    )
 
     print("=" * 60)
     print("DK1 Follower 机械臂平滑复位脚本")
     print("=" * 60)
-    print(f"串口: {args.follower_port}")
-    print(f"速度缩放: {args.joint_velocity_scaling}")
+    print(f"配置文件: {args.config}")
+    print(f"串口: {follower_config.port}")
+    print(f"速度缩放: {follower_config.joint_velocity_scaling}")
     print(f"控制频率: {args.control_freq} Hz")
     print(f"平滑时间: {args.smooth_time} s")
     print(f"单步限幅: {args.max_step:.4f} rad")
     print(f"位置容差: {args.tolerance:.4f} rad")
 
+    follower = None
     print("\n正在连接机械臂...")
     try:
-        follower = DMFollower(DMFollowerConfig(
-            port=args.follower_port,
-            joint_velocity_scaling=args.joint_velocity_scaling,
-            disable_torque_on_disconnect=True
-        ))
+        follower = DMFollower(follower_config)
         follower.connect()
         print("机械臂已连接")
     except Exception as e:
@@ -197,8 +210,9 @@ def main():
         import traceback
         traceback.print_exc()
     finally:
-        follower.disconnect()
-        print("电机已失能，连接已断开")
+        if follower is not None and follower.is_connected:
+            follower.disconnect()
+            print("电机已失能，连接已断开")
         print("\n复位流程结束")
 
 

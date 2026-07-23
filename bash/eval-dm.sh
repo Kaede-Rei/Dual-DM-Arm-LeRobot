@@ -20,29 +20,32 @@
 # --policy_repo_id <repo_id>            必须：模型仓库 ID（如 $USER/act_dm_model）
 # --from_hub                            可选：若指定，则从 Hugging Face Hub 下载并加载模型（默认不启用，使用本地路径）
 # --repo_id <repo_id>                   评估数据集的 repo_id（可选，默认自动为 eval_<policy_repo_name>）
-# --follower_port <port> Follower       从臂串口（默认 /dev/ttyACM0）
-# --joint_velocity_scaling <val>        关节速度缩放因子（默认 0.1 以确保平滑且安全）
+# --config <path>                       机械臂配置文件（默认 config/arm.yaml）
+# --follower_port <port> Follower       从臂串口（默认读取配置文件）
+# --joint_velocity_scaling <val>        关节速度缩放因子（默认读取配置文件）
 # --episode_time_s <sec>                每个 episode 最大执行时长（秒，默认 30）
 # --num_episodes <num>                  要录制的评估 rollout 数量（默认 5，推荐 5-20 以统计性能）
-# --task_description <desc>             评估数据集的单任务描述（默认 "Evaluation of trained ACT policy."）
+# --task_description <desc>             评估数据集的单任务描述（默认 "Evaluation of trained ACT policy.")
 # --push_to_hub                         评估完成后自动上传数据集至 Hugging Face Hub（默认不启用）
 # --resume                              从现有评估数据集继续录制（默认启用）
-# --no_cameras                          不启用摄像头录制（默认启用单个 PC 摄像头）
+# --no_cameras                          不启用摄像头录制（默认读取配置文件）
 # --no_display                          不启用 rerun.io 实时可视化（默认启用）
 # --n_action_steps <int> ACT            策略中执行的动作步数（默认 1，启用平滑集成，较小值更平滑但速度慢，一般取 1~50）
-# --temporal_ensemble_coeff <float>     时序集成衰减系数（默认 0.01，，仅在 n_action_steps=1 时生效；值越小平滑越强，相当于对输出进行低通滤波）
+# --temporal_ensemble_coeff <float>     时序集成衰减系数（默认 0.01，仅在 n_action_steps=1 时生效；值越小平滑越强，相当于对输出进行低通滤波）
 
 # 默认参数配置
-FOLLOWER_PORT="/dev/ttyACM0"
-JOINT_VELOCITY_SCALING=1.0
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CONFIG_PATH="$ROOT_DIR/config/arm.yaml"
+FOLLOWER_PORT=""
+JOINT_VELOCITY_SCALING=""
 NUM_EPISODES=5
 EPISODE_TIME_S=30
 RESET_TIME_S=0                          # 固定为 0
 TASK_DESCRIPTION="Evaluation of trained ACT policy."
-DATASET_FPS=30                          # 数据集保存的帧率（默认25，必须与相机帧率一致，会自动处理）
+DATASET_FPS=30                          # 数据集保存的帧率（必须与相机帧率一致，会自动处理）
 PUSH_TO_HUB=false
-CAMERAS_CONFIG='{"context": {"type": "opencv", "index_or_path": 0, "width": 1280, "height": 720, "fps": 25}}'
 DISPLAY_DATA=true
+NO_CAMERAS=false
 RESUME=true
 FROM_HUB=false
 POLICY_REPO_ID=""
@@ -56,6 +59,7 @@ case $1 in
 --policy_repo_id) POLICY_REPO_ID="$2"; shift 2 ;;
 --from_hub) FROM_HUB=true; shift ;;
 --repo_id) REPO_ID="$2"; shift 2 ;;
+--config) CONFIG_PATH="$2"; shift 2 ;;
 --follower_port) FOLLOWER_PORT="$2"; shift 2 ;;
 --joint_velocity_scaling) JOINT_VELOCITY_SCALING="$2"; shift 2 ;;
 --episode_time_s) EPISODE_TIME_S="$2"; shift 2 ;;
@@ -63,7 +67,7 @@ case $1 in
 --task_description) TASK_DESCRIPTION="$2"; shift 2 ;;
 --push_to_hub) PUSH_TO_HUB=true; shift ;;
 --resume) RESUME=true; shift ;;
---no_cameras) CAMERAS_CONFIG=""; shift ;;
+--no_cameras) NO_CAMERAS=true; shift ;;
 --no_display) DISPLAY_DATA=false; shift ;;
 --n_action_steps) N_ACTION_STEPS="$2"; shift 2 ;;
 --temporal_ensemble_coeff) TEMPORAL_ENSEMBLE_COEFF="$2"; shift 2 ;;
@@ -77,25 +81,33 @@ echo "错误：必须指定 --policy_repo_id（例如 $USER/act_dm_model）"
 exit 1
 fi
 
+if [[ ! -f "$CONFIG_PATH" ]]; then
+echo "错误：配置文件不存在：$CONFIG_PATH"
+exit 1
+fi
+
 # 自动检测并验证帧率一致性
-if [ -n "$CAMERAS_CONFIG" ]; then
+if [ "$NO_CAMERAS" = false ]; then
     echo "检查相机帧率与数据集帧率一致性..."
-    
-    # 从CAMERAS_CONFIG中提取第一个相机的帧率
-    EXTRACTED_FPS=$(python3 -c "
-import json
-config = json.loads('$CAMERAS_CONFIG')
-if config:
-    first_camera = next(iter(config.values()))
-    print(first_camera.get('fps', $DATASET_FPS))
+
+    EXTRACTED_FPS=$(python3 - "$CONFIG_PATH" "$DATASET_FPS" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], "r", encoding="utf-8") as f:
+    config = yaml.safe_load(f) or {}
+
+cameras = config.get("robot", {}).get("cameras", {})
+if cameras:
+    first_camera = next(iter(cameras.values()))
+    print(first_camera.get("fps", sys.argv[2]))
 else:
-    print($DATASET_FPS)
-")
-    
-    # 如果指定了dataset_fps但相机配置也有帧率，检查是否一致
+    print(sys.argv[2])
+PY
+)
+
     if [ "$EXTRACTED_FPS" != "$DATASET_FPS" ]; then
         echo "警告：相机帧率($EXTRACTED_FPS)与数据集帧率($DATASET_FPS)不一致！"
-        echo "建议：使用 --dataset_fps $EXTRACTED_FPS 保持一致性"
         read -p "是否自动调整数据集帧率为相机帧率? (y/n): " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -117,6 +129,7 @@ fi
 # 输出启动信息
 echo "========================================"
 echo "- 启动 DM 模型评估与部署（自主执行 + 录制评估数据集）"
+echo "- 配置文件: $CONFIG_PATH"
 echo "- 训练模型 Policy Repo ID: $POLICY_REPO_ID"
 echo "- 评估 episodes 数量: $NUM_EPISODES"
 if [ "$FROM_HUB" = true ]; then
@@ -142,8 +155,7 @@ echo "========================================"
 # 构建 lerobot-record 参数数组
 ARGS=(
     --robot.type=dm_follower
-    --robot.port="$FOLLOWER_PORT"
-    --robot.joint_velocity_scaling="$JOINT_VELOCITY_SCALING"
+    --robot.config_path="$CONFIG_PATH"
     --robot.disable_torque_on_disconnect=false
     --dataset.repo_id="$REPO_ID"
     --dataset.fps="$DATASET_FPS"
@@ -154,6 +166,14 @@ ARGS=(
     --dataset.single_task="$TASK_DESCRIPTION"
     --policy.n_action_steps="$N_ACTION_STEPS"
 )
+
+# 添加可选的机械臂覆盖参数
+if [ -n "$FOLLOWER_PORT" ]; then
+ARGS+=(--robot.port="$FOLLOWER_PORT")
+fi
+if [ -n "$JOINT_VELOCITY_SCALING" ]; then
+ARGS+=(--robot.joint_velocity_scaling="$JOINT_VELOCITY_SCALING")
+fi
 
 # 处理 temporal ensembling 兼容性
 if [ "$N_ACTION_STEPS" = 1 ]; then
@@ -168,8 +188,8 @@ ARGS+=(--policy.path="$MODEL_PATH")
 fi
 
 # 添加可选摄像头配置
-if [ -n "$CAMERAS_CONFIG" ]; then
-ARGS+=(--robot.cameras="$CAMERAS_CONFIG")
+if [ "$NO_CAMERAS" = true ]; then
+ARGS+=(--robot.cameras='{}')
 fi
 
 # 检测评估数据集是否已存在

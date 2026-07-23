@@ -1,0 +1,31 @@
+# 机器人配置（从臂）
+robot:
+  port: /dev/com-1.3-tty              # 机器人串口设备
+  disable_torque_on_disconnect: true  # 断开连接时是否禁用电机扭矩
+  joint_velocity_scaling: 1.0         # 关节速度缩放系数（0.0~1.0）
+  max_gripper_torque: 1.0             # 最大夹爪扭矩（0.0~1.0）
+
+  # 相机配置
+  cameras:
+    # 手部相机
+    end:
+      type: opencv
+      index_or_path: /dev/com-1.2-video
+      width: 640
+      height: 480
+      fps: 30
+    # 眼部相机
+    eye:
+      type: opencv
+      index_or_path: 4
+      width: 1280
+      height: 720
+      fps: 30
+
+# 遥操作配置（主臂）
+teleop:
+  port: /dev/com-1.4-tty                    # 遥操作串口设备
+  gripper_open_pos: 2280                    # 夹爪张开位置
+  gripper_closed_pos: 1670                  # 夹爪闭合位置
+  direction: [1, 1, 1, 1, 1, 1]             # 各关节方向
+  offset: [0.0, 0.0, 1.64, 0.0, 0.0, 0.0]   # 各关节零位偏移

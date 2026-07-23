@@ -4,74 +4,44 @@
 # 使用前确保：
 # 1. 已激活包含 LeRobot 和 lerobot_robot_multi_robots 包的 Python 环境
 # 2. Leader 臂和 Follower 臂已正确连接并上电
-# 3. Leader 臂端口默认 /dev/ttyUSB0，Follower 臂端口默认 /dev/ttyACM0（可通过参数覆盖）
-# 4. 若使用 --display_data，请确保摄像头已连接并索引正确（可通过 get_uvc_cam_idx 脚本检查）
+# 3. Leader 臂和 Follower 臂端口已在 config/arm.yaml 中正确配置（可通过参数覆盖）
+# 4. 若使用 --display_data，请确保摄像头已连接并在 config/arm.yaml 中正确配置
 #
 # 使用方法示例：
-# python teleop_dk1.py                     # 无界面纯遥操作（仅关节映射，无摄像头）
-# python teleop_dk1.py --display_data      # 启动 rerun.io GUI + 自动显示摄像头
-# python teleop_dk1.py --follower_port /dev/ttyACM1 --leader_port /dev/ttyUSB1 --freq 100
+# python scripts/teleop.py                                    # 无界面纯遥操作（仅关节映射，无摄像头）
+# python scripts/teleop.py --display_data                     # 启动 rerun.io GUI + 自动显示摄像头
+# python scripts/teleop.py --config config/arm.yaml           # 指定机械臂配置
+# python scripts/teleop.py --follower_port /dev/ttyACM1 --leader_port /dev/ttyUSB1 --freq 100
 #
 # 支持的参数：
-# --follower_port <port> Follower 臂串口路径（默认 /dev/ttyACM0）
-# --leader_port <port> Leader 臂串口路径（默认 /dev/ttyUSB0）
+# --config <path> 机械臂配置文件（默认 config/arm.yaml）
+# --follower_port <port> Follower 臂串口路径（默认读取配置文件）
+# --leader_port <port> Leader 臂串口路径（默认读取配置文件）
 # --freq <float> 无界面模式下控制循环频率（Hz，默认 200.0）
-# --joint_velocity_scaling <float> Follower 关节速度缩放（默认 0.2）
+# --joint_velocity_scaling <float> Follower 关节速度缩放（默认读取配置文件）
 # --display_data 若指定，则启动 lerobot-teleoperate GUI 模式（自动启用摄像头显示，不运行脚本主循环）
-
-# Leader 各关节方向与零位偏移配置
-# 注意 Leader 各关节方向和角度要一一对应，通过 test/follower_test.py 和 test/leader_test.py 可验证关节映射是否正确
-LEADER_CONFIG = {
-    "direction": [1, 1, 1, 1, 1, 1],  # Leader 各关节方向（1 正向，-1 反向）
-    "offset": [
-        0.0,
-        0.0,
-        1.64,
-        0.0,
-        0.0,
-        0.0,
-    ],  # Leader 各关节零位偏移（单位 rad，等同于 test）
-}
-
-# 固定摄像头配置（仅在 --display_data 模式下生效）
-# 根据实际硬件修改以下配置（例如摄像头索引、分辨率、FPS 等）
-CAMERAS_CONFIG = {
-    "end": {
-        "type": "opencv",
-        "index_or_path": "/dev/com-1.2-video",
-        "width": 640,
-        "height": 480,
-        "fps": 30,
-    },
-    "eye": {
-        "type": "opencv",
-        "index_or_path": 4,
-        "width": 1280,
-        "height": 720,
-        "fps": 30,
-    },
-}
 
 import argparse
 import time
 import subprocess
-import json
+from pathlib import Path
 from lerobot_robot_multi_robots.dm_arm import DMFollower, DMLeader
 from lerobot_robot_multi_robots.dm_arm import DMFollowerConfig, DMLeaderConfig
 
-CAMERAS_JSON = json.dumps(CAMERAS_CONFIG)
+DEFAULT_CONFIG_PATH = str(Path(__file__).resolve().parents[1] / "config" / "arm.yaml")
 
 
 def parse_args():
     ap = argparse.ArgumentParser(description="DK1 teleoperation")
-    ap.add_argument("--follower_port", default="/dev/com-1.3-tty")
-    ap.add_argument("--leader_port", default="/dev/com-1.4-tty")
+    ap.add_argument("--config", default=DEFAULT_CONFIG_PATH)
+    ap.add_argument("--follower_port", default=None)
+    ap.add_argument("--leader_port", default=None)
     ap.add_argument("--freq", type=float, default=200.0)
     ap.add_argument(
         "--joint_velocity_scaling",
         type=float,
-        default=1.0,
-        help="Follower 关节速度缩放（默认 1.0）",
+        default=None,
+        help="Follower 关节速度缩放（默认读取配置文件）",
     )
     ap.add_argument(
         "--display_data",
@@ -88,40 +58,35 @@ def main():
         cmd = [
             "lerobot-teleoperate",
             "--robot.type=dm_follower",
-            f"--robot.port={args.follower_port}",
-            f"--robot.joint_velocity_scaling={args.joint_velocity_scaling}",
+            f"--robot.config_path={args.config}",
             "--teleop.type=dm_leader",
-            f"--teleop.port={args.leader_port}",
+            f"--teleop.config_path={args.config}",
             "--display_data=true",
-            f"--robot.cameras={CAMERAS_JSON}",  # 固定启用摄像头配置
         ]
+
+        if args.follower_port is not None:
+            cmd.append(f"--robot.port={args.follower_port}")
+        if args.leader_port is not None:
+            cmd.append(f"--teleop.port={args.leader_port}")
+        if args.joint_velocity_scaling is not None:
+            cmd.append(f"--robot.joint_velocity_scaling={args.joint_velocity_scaling}")
 
         try:
             subprocess.run(cmd, check=True)
         except KeyboardInterrupt:
             print("\nStopping teleop GUI...")
-        finally:
-            # 确保在退出时安全断开连接
-            leader = DMLeader(DMLeaderConfig(port=args.leader_port))
-            leader.connect()
-            follower = DMFollower(
-                DMFollowerConfig(
-                    port=args.follower_port, disable_torque_on_disconnect=True
-                )
-            )
-            follower.connect()
-            leader.disconnect()
-            follower.disconnect()
         return
 
     # 无界面纯遥操作模式（仅关节动作映射，无摄像头、无 GUI）
-    leader = DMLeader(DMLeaderConfig(port=args.leader_port))
+    leader = DMLeader(DMLeaderConfig(config_path=args.config, port=args.leader_port))
     leader.connect()
     follower = DMFollower(
         DMFollowerConfig(
+            config_path=args.config,
             port=args.follower_port,
             joint_velocity_scaling=args.joint_velocity_scaling,
             disable_torque_on_disconnect=True,
+            cameras={},
         )
     )
     follower.connect()
@@ -131,11 +96,6 @@ def main():
         print("Starting pure teleoperation (no GUI, no cameras)...")
         while True:
             action = leader.get_action()
-            action = [
-                action[i] * LEADER_CONFIG["direction"][i] + LEADER_CONFIG["offset"][i]
-                for i in range(6)
-            ]
-
             follower.send_action(action)
             time.sleep(period)
     except KeyboardInterrupt:

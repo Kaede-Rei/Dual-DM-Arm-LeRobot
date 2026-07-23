@@ -387,7 +387,7 @@ print(f'Episodes: {len(dataset)}')
 
 ## 📝 许可证
 
-本项目采用 **MIT License** 开源，详见 [LICENSE](LICENSE) 文件。
+本项目采用 **MIT License** 开源，详见 [LICENSE](LICENSE) 文件
 
 ## 👥 贡献
 

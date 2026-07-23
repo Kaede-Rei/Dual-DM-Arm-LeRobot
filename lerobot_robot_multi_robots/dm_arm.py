@@ -342,6 +342,10 @@ class DMLeader(Teleoperator):
             for motor, val in action.items()
         }
 
+        for i in range(6):
+            key = f"joint_{i + 1}.pos"
+            action[key] = action[key] * self.config.direction[i] + self.config.offset[i]
+
         # # Normalize gripper position between 1 (closed) and 0 (open)
         gripper_range = self.config.gripper_open_pos - self.config.gripper_closed_pos
         action["gripper.pos"] = (

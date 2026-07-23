@@ -3,9 +3,12 @@ from lerobot_robot_multi_robots.config_dm_arm import DMFollowerConfig
 from lerobot_robot_multi_robots.motors.DM_Control_Python.DM_CAN import *
 
 import time
+from pathlib import Path
 
+config_path = str(Path(__file__).resolve().parents[1] / "config" / "arm.yaml")
 follower_config = DMFollowerConfig(
-    port="/dev/ttyUSB0",
+    config_path=config_path,
+    cameras={},
 )
 follower = DMFollower(follower_config)
 

@@ -2,12 +2,22 @@ from lerobot_robot_multi_robots.dm_arm import DMFollower
 from lerobot_robot_multi_robots.config_dm_arm import DMFollowerConfig
 from lerobot_robot_multi_robots.motors.DM_Control_Python.DM_CAN import *
 
+import argparse
 import serial
 import time
+from pathlib import Path
 
+DEFAULT_CONFIG_PATH = str(Path(__file__).resolve().parents[1] / "config" / "arm.yaml")
+
+parser = argparse.ArgumentParser(description="DM Follower calibration")
+parser.add_argument("--config", default=DEFAULT_CONFIG_PATH)
+parser.add_argument("--follower_port", default=None)
+args = parser.parse_args()
 
 follower_config = DMFollowerConfig(
-    port="/dev/ttyACM0",
+    config_path=args.config,
+    port=args.follower_port,
+    cameras={},
 )
 follower = DMFollower(follower_config)
 

@@ -2,9 +2,9 @@
 
 语言: [中文](README_zh.md) | [ENGLISH](README.md) 
 
-该库支持 **macOS**、**Linux** 和 **Windows** 三个平台。
+该库支持 **macOS**、**Linux** 和 **Windows** 三个平台
 
-🎉 **欢迎加入 QQ 群：677900232** 进行达妙电机技术交流。  
+🎉 **欢迎加入 QQ 群：677900232** 进行达妙电机技术交流  
 🛒 **点击访问达妙智能控制企业店**：[达妙店铺](https://shop290016675.taobao.com/?spm=pc_detail.29232929/evo365560b447259.shop_block.dshopinfo.59f47dd6w4Z4dX)
 
 * * *

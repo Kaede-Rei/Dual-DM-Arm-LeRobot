@@ -26,8 +26,8 @@ if [ "$ARCH_TYPE" != "$REQUIRED_ARCH" ]; then
 fi
 
 if grep -qi microsoft /proc/version 2>/dev/null; then
-    echo " 检测到 WSL 环境。建议在原生 Linux 中运行以确保驱动和性能正常"
-    # 如果你想强制禁止 WSL，可以取消下面这一行的注释
+    echo " 检测到 WSL 环境；建议在原生 Linux 中运行以确保驱动和性能正常"
+    # 如果想强制禁止 WSL，可以取消下面这一行的注释
     # return 1 2>/dev/null || exit 1
 fi
 

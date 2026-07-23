@@ -6,35 +6,34 @@
 # 1. 已激活包含 LeRobot 的 Python 环境
 # 2. 已 hf login（若需 push_to_hub）
 # 3. 在 ~/.bashrc 中添加：export HF_HOME="自定义缓存路径"
-# 
+#
 # 使用方法示例：
 # ./bash/record-dm.sh --repo_id agro/dm_record_vx（组织文件夹，vx 为版本号）
 # ./bash/record-dm.sh --repo_id $USER/dm_my_task（个人文件夹，可用于测试）
 # ./bash/record-dm.sh --repo_id $USER/dm_my_task --no_cameras
 # ./bash/record-dm.sh --repo_id $USER/dm_my_task --num_episodes 100 --task_description "Pick and place objects" --push_to_hub
-# 
+#
 # 支持的参数：
 # --repo_id <repo_id>                   必须：数据集 repo_id（如 $USER/dm_test）
-# --follower_port <port> Follower       从臂串口（默认 /dev/ttyACM0）
-# --leader_port <port> Leader           主臂串口（默认 /dev/ttyUSB0）
-# --joint_velocity_scaling <val>        关节速度缩放（默认 1.0）
+# --config <path>                       机械臂配置文件（默认 config/arm.yaml）
+# --follower_port <port> Follower       从臂串口（默认读取配置文件）
+# --leader_port <port> Leader           主臂串口（默认读取配置文件）
+# --joint_velocity_scaling <val>        关节速度缩放（默认读取配置文件）
 # --num_episodes <num>                  录制 episode 数量（默认 50）
-# --episode_time_s <sec>                每个 episode 时长（秒，默认 30）
+# --episode_time_s <sec>                每个 episode 时长（秒，默认 120）
 # --reset_time_s <sec>                  重置时间（秒，默认 0）
-# --task_description <desc>             单任务描述（默认 "Task description."）
+# --task_description <desc>             单任务描述
 # --push_to_hub                         录制后自动上传至 Hugging Face Hub（默认不启用）
 # --resume                              从现有数据集继续录制（默认启用）
-# --no_cameras                          不启用摄像头（默认启用两个摄像头）
+# --no_cameras                          不启用摄像头（默认读取配置文件）
 # --no_display                          不启用 rerun.io 实时可视化（默认启用）
 
 # 默认参数配置
-FOLLOWER_PORT="/dev/com-1.3-tty"        # Follower 臂串口
-LEADER_PORT="/dev/com-1.1-tty"          # Leader 臂串口
-JOINT_VELOCITY_SCALING=1.0              # 关节速度缩放
-# 预设摄像头配置，要严格按照示例格式填写：
-# CAMERAS_CONFIG='{"相机名称": {"type": "opencv", "index_or_path": 设备索引或路径, "width": 宽度, "height": 高度, "fps": 帧率}}'
-CAMERAS_CONFIG='{"eye": {"type": "opencv", "index_or_path": 0, "width": 1280, "height": 720, "fps": 30},
-                 "end": {"type": "opencv", "index_or_path": "/dev/com-1.2-video", "width": 640, "height": 480, "fps": 30}}'
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CONFIG_PATH="$ROOT_DIR/config/arm.yaml"
+FOLLOWER_PORT=""                       # Follower 臂串口，为空时读取配置文件
+LEADER_PORT=""                         # Leader 臂串口，为空时读取配置文件
+JOINT_VELOCITY_SCALING=""              # 关节速度缩放，为空时读取配置文件
 NUM_EPISODES=50                         # 录制 episode 数量
 EPISODE_TIME_S=120                      # 每个 episode 时长（秒）
 RESET_TIME_S=0                          # 重置时间（秒），注意实际总重置时间是 重置时间 + (当前 episode 实际使用的时间 + 重置时间)，所以写 0 即可
@@ -43,11 +42,13 @@ DATASET_FPS=30                          # 数据集保存的帧率（默认30，
 PUSH_TO_HUB=false                       # 是否上传至 Hugging Face Hub
 RESUME=true                             # 是否从现有数据集继续录制
 DISPLAY_DATA=true                       # 是否启用 rerun.io 实时可视化
+NO_CAMERAS=false                        # 是否禁用摄像头
 REPO_ID=""                              # 数据集 repo_id（必须参数）
 
 # 解析命令行参数
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --config) CONFIG_PATH="$2"; shift 2 ;;
         --follower_port) FOLLOWER_PORT="$2"; shift 2 ;;
         --leader_port) LEADER_PORT="$2"; shift 2 ;;
         --joint_velocity_scaling) JOINT_VELOCITY_SCALING="$2"; shift 2 ;;
@@ -58,37 +59,45 @@ while [[ $# -gt 0 ]]; do
         --task_description) TASK_DESCRIPTION="$2"; shift 2 ;;
         --push_to_hub) PUSH_TO_HUB=true; shift ;;
         --resume) RESUME=true; shift ;;
-        --no_cameras) CAMERAS_CONFIG=""; shift ;;
+        --no_cameras) NO_CAMERAS=true; shift ;;
         --no_display) DISPLAY_DATA=false; shift ;;
-        *) echo "未知参数: $1";  ;;
+        *) echo "未知参数: $1"; exit 1 ;;
     esac
 done
 
 # 检查必须参数
 if [[ -z "$REPO_ID" ]]; then
     echo "错误：必须指定 --repo_id（例如 $USER/dm_my_task）"
-    
+    exit 1
+fi
+
+if [[ ! -f "$CONFIG_PATH" ]]; then
+    echo "错误：配置文件不存在：$CONFIG_PATH"
+    exit 1
 fi
 
 # 自动检测并验证帧率一致性
-if [ -n "$CAMERAS_CONFIG" ]; then
+if [ "$NO_CAMERAS" = false ]; then
     echo "检查相机帧率与数据集帧率一致性..."
-    
-    # 从 CAMERAS_CONFIG 中提取第一个相机的帧率
-    EXTRACTED_FPS=$(python3 -c "
-import json
-config = json.loads('$CAMERAS_CONFIG')
-if config:
-    first_camera = next(iter(config.values()))
-    print(first_camera.get('fps', $DATASET_FPS))
+
+    EXTRACTED_FPS=$(python3 - "$CONFIG_PATH" "$DATASET_FPS" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], "r", encoding="utf-8") as f:
+    config = yaml.safe_load(f) or {}
+
+cameras = config.get("robot", {}).get("cameras", {})
+if cameras:
+    first_camera = next(iter(cameras.values()))
+    print(first_camera.get("fps", sys.argv[2]))
 else:
-    print($DATASET_FPS)
-")
-    
-    # 如果指定了dataset_fps但相机配置也有帧率，检查是否一致
+    print(sys.argv[2])
+PY
+)
+
     if [ "$EXTRACTED_FPS" != "$DATASET_FPS" ]; then
         echo "警告：相机帧率($EXTRACTED_FPS)与数据集帧率($DATASET_FPS)不一致！"
-        echo "建议：使用 --dataset_fps $EXTRACTED_FPS 保持一致性"
         read -p "是否自动调整数据集帧率为相机帧率? (y/n): " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -100,6 +109,7 @@ fi
 
 echo "========================================"
 echo "- 启动 DM 数据集录制（使用官方 lerobot-record）..."
+echo "- 配置文件: $CONFIG_PATH"
 echo "- Repo ID: $REPO_ID"
 echo "- 数据集帧率: $DATASET_FPS Hz"
 echo "- 本地存储路径: $HF_HOME/lerobot/$REPO_ID"
@@ -115,11 +125,10 @@ echo "========================================"
 # 构建参数数组
 ARGS=(
     --robot.type=dm_follower
-    --robot.port="$FOLLOWER_PORT"
-    --robot.joint_velocity_scaling="$JOINT_VELOCITY_SCALING"
+    --robot.config_path="$CONFIG_PATH"
     --robot.disable_torque_on_disconnect=false
     --teleop.type=dm_leader
-    --teleop.port="$LEADER_PORT"
+    --teleop.config_path="$CONFIG_PATH"
     --dataset.repo_id="$REPO_ID"
     --dataset.fps="$DATASET_FPS"
     --dataset.push_to_hub="$PUSH_TO_HUB"
@@ -129,9 +138,20 @@ ARGS=(
     --dataset.single_task="$TASK_DESCRIPTION"
 )
 
+# 添加可选的机械臂覆盖参数
+if [ -n "$FOLLOWER_PORT" ]; then
+    ARGS+=(--robot.port="$FOLLOWER_PORT")
+fi
+if [ -n "$LEADER_PORT" ]; then
+    ARGS+=(--teleop.port="$LEADER_PORT")
+fi
+if [ -n "$JOINT_VELOCITY_SCALING" ]; then
+    ARGS+=(--robot.joint_velocity_scaling="$JOINT_VELOCITY_SCALING")
+fi
+
 # 添加可选的摄像头配置
-if [ -n "$CAMERAS_CONFIG" ]; then
-    ARGS+=(--robot.cameras="$CAMERAS_CONFIG")
+if [ "$NO_CAMERAS" = true ]; then
+    ARGS+=(--robot.cameras='{}')
 fi
 
 # 检测数据集是否已存在
@@ -155,8 +175,8 @@ lerobot-record "${ARGS[@]}"
 
 # 检查命令执行是否成功
 if [ $? -ne 0 ]; then
-  echo "- 错误：lerobot-record 执行失败"
-  
+    echo "- 错误：lerobot-record 执行失败"
+    exit 1
 fi
 
 echo "========================================="

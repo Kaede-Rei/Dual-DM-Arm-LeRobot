@@ -158,12 +158,16 @@ class DualDMLeader(Teleoperator):
             port=self.config.left_port,
             gripper_open_pos=self.config.gripper_open_pos,
             gripper_closed_pos=self.config.gripper_closed_pos,
+            direction=self.config.left_direction,
+            offset=self.config.left_offset,
         )
 
         right_config = DMLeaderConfig(
             port=self.config.right_port,
             gripper_open_pos=self.config.gripper_open_pos,
             gripper_closed_pos=self.config.gripper_closed_pos,
+            direction=self.config.right_direction,
+            offset=self.config.right_offset,
         )
 
         self.left = DMLeader(left_config)
